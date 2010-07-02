@@ -1,19 +1,13 @@
 spirit-parsers
 ==============
 
-This is my personal Boost.Spirit parsers sandbox. As time permits I'd like to learn the various Boost.Spirit parser tools. Not much more to it than that.
+This is my personal Boost.Spirit parsers sandbox. 
+As time permits I'd like to learn the various Boost.Spirit parser tools. 
 
+Current parsers in progress:
 
-
-
-
-HTTP Protocol Parsing
-
-URI spec is defined in RFC 3986: 
-  http://www.faqs.org/rfcs/rfc3986.html
-
-HTTP spec is defined in RFC 2616:
-  http://www.faqs.org/rfcs/rfc2616.html
+* uri as defined in http://www.faqs.org/rfcs/rfc3986.html
+* http11 as defined in http://www.faqs.org/rfcs/rfc2616.html
 
 
 
