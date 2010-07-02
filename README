@@ -7,3 +7,13 @@ This is my personal Boost.Spirit parsers sandbox. As time permits I'd like to le
 
 
 
+HTTP Protocol Parsing
+
+URI spec is defined in RFC 3986: 
+  http://www.faqs.org/rfcs/rfc3986.html
+
+HTTP spec is defined in RFC 2616:
+  http://www.faqs.org/rfcs/rfc2616.html
+
+
+

@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
-project (http11_parser)
+project (spirit-parsers)
 
 set (BOOST_LIB_PATH /opt/boost/lib)
 set (BOOST_LIBS boost_unit_test_framework)

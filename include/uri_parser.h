@@ -1,5 +1,5 @@
-#ifndef __http11_parser_h__
-#define __http11_parser_h__
+#ifndef __uri_parser_h__
+#define __uri_parser_h__
 
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
@@ -8,10 +8,8 @@
 #include <boost/spirit/include/phoenix_stl.hpp>
 
 #include <string>
-#include <vector>
-#include <map>
 
-namespace http11
+namespace uri
 {
     namespace qi = boost::spirit::qi;
     namespace ascii = boost::spirit::ascii;
@@ -42,11 +40,6 @@ namespace http11
     using phoenix::construct;
     using phoenix::insert;
 
-    typedef std::string header_key_type;
-    typedef std::string header_value_type;
-    typedef std::map<header_key_type, header_value_type> header_container_type;
-    typedef header_container_type::value_type header_container_value_type;
-
     struct uri_type
     {
         std::string scheme;
@@ -67,36 +60,6 @@ namespace http11
                    "),query(" + query + 
                    "),fragment(" + fragment + 
                    ")";
-        }
-    };
-
-    struct request_type
-    {
-        std::string method;
-        std::string version;
-        uri_type uri;
-        header_container_type headers;
-
-        request_type()
-        {
-        }
-
-        void dump()
-        {
-            std::cerr << "request line:"
-                      << "method("  << method  << ")" 
-                      << "version(" << version << ")"
-                      << "uri("     << uri.to_string() << ")"
-                      << std::endl;
-
-            std::cerr << "headers:" << std::endl;
-            header_container_type::const_iterator cur = headers.begin();
-            header_container_type::const_iterator end = headers.end();
-            for (; cur != end; ++cur) {
-                std::cerr << "key("   << (*cur).first  << ")"
-                          << "value(" << (*cur).second << ")"
-                          << std::endl;
-            }
         }
     };
 
@@ -153,7 +116,7 @@ namespace http11
             abs_uri         = scheme >> "//" >> authority >> -path >> -query >> -fragment;
             abs_path        = path;
             all_star        = string("*");
-            uri             = ( abs_uri | abs_path | all_star) >> space;
+            uri             = abs_uri | abs_path | all_star;
         }
 
         rule<Iterator> uri;
@@ -167,60 +130,7 @@ namespace http11
         rule<Iterator, std::string()> all_star;
         rule<Iterator, std::string()> abs_uri, abs_path, request_uri;
     };
+} // namespace uri
 
-    template <typename Iterator>
-    struct request_parser : qi::grammar<Iterator>
-    {
-        request_parser(request_type &it) : 
-            request_parser::base_type(request),
-            uri(it.uri)
-        {
-            crlf            %= string("\r\n");
-            escaped_char    %= char_('%') >> xdigit >> xdigit;
-            reserved_char   %= char_(";/?:@&=+$,");
-            mark_char       %= char_("-_.!~*\'()");
-
-            // Method 
-            method_attr     = repeat(1, 20)[upper | digit];
-            method          = method_attr[ref(it.method) = qi::_1] >> space;
-
-            // HTTP-Version 
-            version_attr    = +digit >> char_('.') >> +digit;
-            version         = string("HTTP/") >> version_attr[ref(it.version) = qi::_1];
-
-            // Full Request-Line
-            http_request    = method >> uri >> version
-                            ;
-
-            // Headers: key: value\r\n[key: value\r\n...]
-            //TODO: continuation lines
-            header_key      = +(alnum | '-');
-            header_value    = +(print | ' ' | '\t');
-            header          = (header_key >> ':' >> omit[*space] >> header_value)[
-                insert(ref(it.headers), construct<header_container_value_type>(qi::_1, qi::_2))
-            ];
-
-            //TODO: where does the input stream begin? How do we pass that back to the parser?
-            request = http_request >> crlf >> *(header >> crlf);
-        }
-       
-        rule<Iterator> request;
-        uri_parser<Iterator> uri;
-
-        rule<Iterator> crlf;
-        rule<Iterator> http_request;
-
-        rule<Iterator> mark_char, escaped_char, reserved_char;
-
-        rule<Iterator> method, version;
-        rule<Iterator, std::string()> method_attr, version_attr;
-
-        rule<Iterator, std::string()> header_key, header_value;
-
-        rule<Iterator, header_container_value_type> header;
-    };
-
-} // namespace http11
-
-#endif // __http11_parser_h__
+#endif // __uri_parser_h__
 

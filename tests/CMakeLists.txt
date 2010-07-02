@@ -13,3 +13,4 @@ include_directories(. ../include ${BOOST_INCLUDE_PATH})
 
 # Tests
 add_executable(http11_parser_test http11_parser_test.cpp)
+add_executable(uri_parser_test uri_parser_test.cpp)
