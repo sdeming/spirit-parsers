@@ -6,7 +6,7 @@
 //BOOST_AUTO_TEST_SUITE(test_suite)
 
 template <typename T>
-bool P(uri::uri_type &uri, const T &test)
+bool P(uri::uri_t &uri, const T &test)
 {
     using boost::spirit::ascii::space;
     using boost::spirit::qi::phrase_parse;
@@ -14,7 +14,7 @@ bool P(uri::uri_type &uri, const T &test)
     typename T::const_iterator begin = test.begin();
     typename T::const_iterator end = test.end();
 
-    uri::uri_type new_uri;
+    uri::uri_t new_uri;
     uri = new_uri;
     
     std::cerr << "TEST: |" << test << "|" << std::endl;
@@ -25,14 +25,21 @@ bool P(uri::uri_type &uri, const T &test)
     return pass;
 }
 
-bool P(uri::uri_type &uri, const char *test)
+bool P(uri::uri_t &uri, const char *test)
 {
     return P(uri, std::string(test));
 }
 
+BOOST_AUTO_TEST_CASE(uri_pct_encoded_host)
+{
+    uri::uri_t uri;
+    BOOST_CHECK(true == P(uri, "http://%6d%61%6b%65%66%69%6c%65%2e%63%6f%6d"));
+    BOOST_CHECK("makefile.com" == uri.host);
+}
+
 BOOST_AUTO_TEST_CASE(uri_components)
 {
-    uri::uri_type uri;
+    uri::uri_t uri;
     BOOST_CHECK(true == P(uri, "http://makefile.com"));
     BOOST_CHECK("http"          == uri.scheme);
     BOOST_CHECK(""              == uri.user_info);
@@ -286,7 +293,7 @@ BOOST_AUTO_TEST_CASE(uri_components)
 
 BOOST_AUTO_TEST_CASE(uri_components_with_ipv4_addresses)
 {
-    uri::uri_type uri;
+    uri::uri_t uri;
     BOOST_CHECK(true == P(uri, "http://10.0.0.1"));
     BOOST_CHECK("http"          == uri.scheme);
     BOOST_CHECK(""              == uri.user_info);
@@ -538,12 +545,260 @@ BOOST_AUTO_TEST_CASE(uri_components_with_ipv4_addresses)
     BOOST_CHECK("frag"          == uri.fragment);
 }
 
-BOOST_AUTO_TEST_CASE(uri_pct_encoded_host)
+BOOST_AUTO_TEST_CASE(uri_components_with_ipv6_v4_mixed_addresses)
 {
-    uri::uri_type uri;
-    BOOST_CHECK(true == P(uri, "http://%6dakefile.com"));
-    BOOST_CHECK("%6dakefile.com" == uri.host);
+    uri::uri_t uri;
+    BOOST_CHECK(true == P(uri, "http://[FFFF:1:2::10.0.0.1]"));
+    BOOST_CHECK("http"          == uri.scheme);
+    BOOST_CHECK(""              == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK(""              == uri.port);
+    BOOST_CHECK(""              == uri.path);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://[FFFF:1:2::10.0.0.1]"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK(""              == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK(""              == uri.port);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://[FFFF:1:2::10.0.0.1]#frag"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK(""              == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK(""              == uri.port);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK("frag"              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://[FFFF:1:2::10.0.0.1]:443"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK(""              == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("443"           == uri.port);
+    BOOST_CHECK(""              == uri.path);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://joe@[FFFF:1:2::10.0.0.1]:443"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK("joe"           == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("443"           == uri.port);
+    BOOST_CHECK(""              == uri.path);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://joe:letmein@[FFFF:1:2::10.0.0.1]:443"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("443"           == uri.port);
+    BOOST_CHECK(""              == uri.path);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://joe:letmein@[FFFF:1:2::10.0.0.1]:443#frag"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("443"           == uri.port);
+    BOOST_CHECK(""              == uri.path);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK("frag"          == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://joe:letmein@[FFFF:1:2::10.0.0.1]/"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK(""              == uri.port);
+    BOOST_CHECK("/"             == uri.path);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://joe:letmein@[FFFF:1:2::10.0.0.1]/#frag"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK(""              == uri.port);
+    BOOST_CHECK("/"             == uri.path);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK("frag"          == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "http://joe:letmein@[FFFF:1:2::10.0.0.1]:8080/"));
+    BOOST_CHECK("http"          == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("8080"          == uri.port);
+    BOOST_CHECK("/"             == uri.path);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "http://joe:letmein@[FFFF:1:2::10.0.0.1]:8080/#frag"));
+    BOOST_CHECK("http"          == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("8080"          == uri.port);
+    BOOST_CHECK("/"             == uri.path);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK("frag"          == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "http://joe:letmein@[FFFF:1:2::10.0.0.1]:8080/path"));
+    BOOST_CHECK("http"          == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("8080"          == uri.port);
+    BOOST_CHECK("/path"         == uri.path);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "http://joe:letmein@[FFFF:1:2::10.0.0.1]:8080/deeper/path"));
+    BOOST_CHECK("http"          == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("8080"          == uri.port);
+    BOOST_CHECK("/deeper/path"  == uri.path);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "http://joe:letmein@[FFFF:1:2::10.0.0.1]:8080/deeper/path#frag"));
+    BOOST_CHECK("http"          == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("8080"          == uri.port);
+    BOOST_CHECK("/deeper/path"  == uri.path);
+    BOOST_CHECK(""              == uri.query);
+    BOOST_CHECK("frag"          == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://[FFFF:1:2::10.0.0.1]:443?foo=1&goo=2"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK(""              == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("443"           == uri.port);
+    BOOST_CHECK(""              == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://joe@[FFFF:1:2::10.0.0.1]:443?foo=1&goo=2"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK("joe"           == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("443"           == uri.port);
+    BOOST_CHECK(""              == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://joe:letmein@[FFFF:1:2::10.0.0.1]:443?foo=1&goo=2"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("443"           == uri.port);
+    BOOST_CHECK(""              == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://joe:letmein@[FFFF:1:2::10.0.0.1]/?foo=1&goo=2"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK(""              == uri.port);
+    BOOST_CHECK("/"             == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "http://joe:letmein@[FFFF:1:2::10.0.0.1]:8080/?foo=1&goo=2"));
+    BOOST_CHECK("http"          == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("8080"          == uri.port);
+    BOOST_CHECK("/"             == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "http://joe:letmein@[FFFF:1:2::10.0.0.1]:8080/path?foo=1&goo=2"));
+    BOOST_CHECK("http"          == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("8080"          == uri.port);
+    BOOST_CHECK("/path"         == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "http://joe:letmein@[FFFF:1:2::10.0.0.1]:8080/deeper/path?foo=1&goo=2"));
+    BOOST_CHECK("http"          == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("8080"          == uri.port);
+    BOOST_CHECK("/deeper/path"  == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK(""              == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://[FFFF:1:2::10.0.0.1]:443?foo=1&goo=2#frag"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK(""              == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("443"           == uri.port);
+    BOOST_CHECK(""              == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK("frag"          == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://joe@[FFFF:1:2::10.0.0.1]:443?foo=1&goo=2#frag"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK("joe"           == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("443"           == uri.port);
+    BOOST_CHECK(""              == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK("frag"          == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://joe:letmein@[FFFF:1:2::10.0.0.1]:443?foo=1&goo=2#frag"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("443"           == uri.port);
+    BOOST_CHECK(""              == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK("frag"          == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "https://joe:letmein@[FFFF:1:2::10.0.0.1]/?foo=1&goo=2#frag"));
+    BOOST_CHECK("https"         == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK(""              == uri.port);
+    BOOST_CHECK("/"             == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK("frag"          == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "http://joe:letmein@[FFFF:1:2::10.0.0.1]:8080/?foo=1&goo=2#frag"));
+    BOOST_CHECK("http"          == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("8080"          == uri.port);
+    BOOST_CHECK("/"             == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK("frag"          == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "http://joe:letmein@[FFFF:1:2::10.0.0.1]:8080/path?foo=1&goo=2#frag"));
+    BOOST_CHECK("http"          == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("8080"          == uri.port);
+    BOOST_CHECK("/path"         == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK("frag"          == uri.fragment);
+
+    BOOST_CHECK(true == P(uri, "http://joe:letmein@[FFFF:1:2::10.0.0.1]:8080/deeper/path?foo=1&goo=2#frag"));
+    BOOST_CHECK("http"          == uri.scheme);
+    BOOST_CHECK("joe:letmein"   == uri.user_info);
+    BOOST_CHECK("FFFF:1:2::10.0.0.1"      == uri.host);
+    BOOST_CHECK("8080"          == uri.port);
+    BOOST_CHECK("/deeper/path"  == uri.path);
+    BOOST_CHECK("foo=1&goo=2"   == uri.query);
+    BOOST_CHECK("frag"          == uri.fragment);
 }
+
 
 
 //BOOST_AUTO_TEST_SUITE_END()

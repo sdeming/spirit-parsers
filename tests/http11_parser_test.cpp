@@ -6,7 +6,7 @@
 //BOOST_AUTO_TEST_SUITE(test_suite)
 
 template <typename T>
-bool P(http11::request_type &req, const T &test)
+bool P(http11::request_t &req, const T &test)
 {
     using boost::spirit::ascii::space;
     using boost::spirit::qi::phrase_parse;
@@ -14,25 +14,25 @@ bool P(http11::request_type &req, const T &test)
     typename T::const_iterator begin = test.begin();
     typename T::const_iterator end = test.end();
 
-    http11::request_type new_request;
+    http11::request_t new_request;
     req = new_request;
     
     std::cerr << "TEST:" << std::endl << test << "==================" << std::endl;
     http11::request_parser<typename T::const_iterator> grammar(req);
     bool pass = phrase_parse(begin, end, grammar, space);
-    req.dump(); 
+    std::cerr << req.to_string() << std::endl;
     std::cerr << "==================" << std::endl;
     return pass;
 }
 
-bool P(http11::request_type &req, const char *test)
+bool P(http11::request_t &req, const char *test)
 {
     return P(req, std::string(test));
 }
 
 BOOST_AUTO_TEST_CASE(all_methods_without_headers)
 {
-    http11::request_type req;
+    http11::request_t req;
     BOOST_CHECK(true == P(req, "GET / HTTP/1.1\r\n"));
     BOOST_CHECK(true == P(req, "POST / HTTP/1.1\r\n"));
     BOOST_CHECK(true == P(req, "PUT / HTTP/1.1\r\n"));
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(all_methods_without_headers)
 
 BOOST_AUTO_TEST_CASE(with_one_header)
 {
-    http11::request_type req;
+    http11::request_t req;
     BOOST_CHECK(true == P(req, "GET / HTTP/1.1\r\nHost: makefile.com\r\n"));
     BOOST_CHECK("makefile.com" == req.headers["Host"]);
     BOOST_CHECK("makefile.com" != req.headers["HOST"]); // case sensitive
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(with_one_header)
 
 BOOST_AUTO_TEST_CASE(with_more_than_one_headers)
 {
-    http11::request_type req;
+    http11::request_t req;
     BOOST_CHECK(true == P(req, "GET / HTTP/1.1\r\nHost: makefile.com\r\nX-Test: goobers\r\nX-Another: gobstoppers"));
     BOOST_CHECK("goobers" == req.headers["X-Test"]);
     BOOST_CHECK("gobstoppers" == req.headers["X-Another"]);
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(with_more_than_one_headers)
 
 BOOST_AUTO_TEST_CASE(unknown_method)
 {
-    http11::request_type req;
+    http11::request_t req;
     P(req, "SOMEthing / HTTP/1.1\r\nHost: makefile.com");
     BOOST_CHECK(false == P(req, "get / HTTP/1.1\r\n"));
     BOOST_CHECK(false == P(req, "GeT / HTTP/1.1\r\nHost: makefile.com"));
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(unknown_method)
 
 BOOST_AUTO_TEST_CASE(uri_correctness)
 {
-    http11::request_type req;
+    http11::request_t req;
 
     BOOST_CHECK(true == P(req, "GET http://makefile.com HTTP/1.1\r\nHost: makefile.com\r\n"));
     BOOST_CHECK(true == P(req, "GET http://%6dakefile.com HTTP/1.1\r\nHost: makefile.com\r\n"));

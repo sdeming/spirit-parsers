@@ -18,77 +18,73 @@ namespace http11
     namespace ascii = boost::spirit::ascii;
     namespace phoenix = boost::phoenix;
 
-    using qi::char_;
-    using qi::rule;
-    using qi::lit;
-    using qi::lexeme;
-    using qi::skip;
-    using qi::omit;
-    using qi::xdigit;
-    using qi::repeat;
-    using qi::raw;
-    using namespace qi::labels;
+    typedef std::string header_key_t;
+    typedef std::string header_value_t;
+    typedef std::map<header_key_t, header_value_t> header_container_t;
+    typedef header_container_t::value_type header_container_value_type;
 
-    using ascii::space;
-    using ascii::alpha;
-    using ascii::alnum;
-    using ascii::upper;
-    using ascii::print;
-    using ascii::digit;
-    using ascii::string;
-
-    using phoenix::ref;
-    using phoenix::cref;
-    using phoenix::val;
-    using phoenix::construct;
-    using phoenix::insert;
-
-    typedef std::string header_key_type;
-    typedef std::string header_value_type;
-    typedef std::map<header_key_type, header_value_type> header_container_type;
-    typedef header_container_type::value_type header_container_value_type;
-
-    struct request_type
+    /**
+     * Structure representing an entire HTTP 1.1 request.
+     */
+    struct request_t
     {
         std::string method;
         std::string version;
-        uri::uri_type uri;
-        header_container_type headers;
+        uri::uri_t uri;
+        header_container_t headers;
 
-        request_type()
-        {
-        }
+        request_t() { }
 
-        void dump()
+        std::string to_string()
         {
-            std::cerr << "request line:"
-                      << "method("  << method  << ")," 
-                      << "version(" << version << "),"
-                      << "uri("     << uri.to_string() << "),"
-                      << std::endl;
+            std::ostringstream str;
+            str << "request line:"
+                << "method("  << method  << ")," 
+                << "version(" << version << "),"
+                << "uri("     << uri.to_string() << "),"
+                << std::endl;
 
             std::cerr << "headers:" << std::endl;
-            header_container_type::const_iterator cur = headers.begin();
-            header_container_type::const_iterator end = headers.end();
+            header_container_t::const_iterator cur = headers.begin();
+            header_container_t::const_iterator end = headers.end();
             for (; cur != end; ++cur) {
-                std::cerr << "key("   << (*cur).first  << "),"
-                          << "value(" << (*cur).second << ")"
-                          << std::endl;
+                str << "key("   << (*cur).first  << "),"
+                    << "value(" << (*cur).second << ")"
+                    << std::endl;
             }
+
+            return str.str();
         }
     };
 
+    /**
+     * An implementation of an HTTP 1.1 parser
+     */
     template <typename Iterator>
     struct request_parser : qi::grammar<Iterator>
     {
-        request_parser(request_type &it) : 
-            request_parser::base_type(request),
+        request_parser(request_t &it) : 
+            request_parser::base_type(start),
             uri(it.uri)
         {
-            crlf            %= string("\r\n");
-            escaped_char    %= char_('%') >> xdigit >> xdigit;
-            reserved_char   %= char_(";/?:@&=+$,");
-            mark_char       %= char_("-_.!~*\'()");
+            using qi::char_;
+            using qi::omit;
+            using qi::repeat;
+
+            using ascii::space;
+            using ascii::alnum;
+            using ascii::upper;
+            using ascii::print;
+            using ascii::digit;
+            using ascii::string;
+
+            using phoenix::ref;
+            using phoenix::val;
+            using phoenix::construct;
+            using phoenix::insert;
+
+            // Misc.
+            crlf            = string("\r\n");
 
             // Method 
             method_attr     = repeat(1, 20)[upper | digit];
@@ -110,23 +106,17 @@ namespace http11
             ];
 
             //TODO: where does the input stream begin? How do we pass that back to the parser?
-            request = http_request >> crlf >> *(header >> crlf);
+            start = http_request >> crlf >> *(header >> crlf);
         }
        
-        rule<Iterator> request;
         uri::uri_parser<Iterator> uri;
-
-        rule<Iterator> crlf;
-        rule<Iterator> http_request;
-
-        rule<Iterator> mark_char, escaped_char, reserved_char;
-
-        rule<Iterator> method, version;
-        rule<Iterator, std::string()> method_attr, version_attr;
-
-        rule<Iterator, std::string()> header_key, header_value;
-
-        rule<Iterator, header_container_value_type> header;
+        qi::rule<Iterator, std::string()> crlf;
+        qi::rule<Iterator> http_request;
+        qi::rule<Iterator> method, version;
+        qi::rule<Iterator, std::string()> method_attr, version_attr;
+        qi::rule<Iterator, std::string()> header_key, header_value;
+        qi::rule<Iterator, header_container_value_type> header;
+        qi::rule<Iterator> start;
     };
 
 } // namespace http11
