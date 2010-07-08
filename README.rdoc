@@ -8,7 +8,7 @@ first parser is an HTTP 1.1 parser using boost::spirit::qi and is proving to
 be quite challenging and fun. I'm certain that I am not doing things "right"
 in all cases but it is working out better than I originally anticipated.
 
-In all cases an overdoses of tests are provided with more added with each
+In all cases an overdose of tests are provided with more added with each
 discovery.
 
 ===Requirements
