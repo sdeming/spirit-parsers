@@ -1,0 +1,22 @@
+= spirit-parsers
+
+===Description
+
+This is my personal Boost.Spirit parsers sandbox. 
+As time permits I'd like to learn the various Boost.Spirit parser tools. 
+
+===Requirements
+
+* CMake
+* Boost-1.42.0 or newer
+* Spirit 2.3 or newer
+* Tested with gcc-4.4.3 on Ubuntu 10.04
+
+===Current parsers
+
+* http11_parser, see: http://www.faqs.org/rfcs/rfc2616.html
+* uri_parser, see: http://www.faqs.org/rfcs/rfc3986.html
+* percent_encoded_char (ie, %6d translates to m)
+* ipv4_address
+* ipv6_address
+
