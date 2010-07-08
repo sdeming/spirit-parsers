@@ -1,19 +1,23 @@
 = spirit-parsers
 
 ===Description
-
 This is my personal Boost.Spirit parsers sandbox. 
-As time permits I'd like to learn the various Boost.Spirit parser tools. 
+
+As time permits I'd like to learn the various Boost.Spirit parser tools. The
+first parser is an HTTP 1.1 parser using boost::spirit::qi and is proving to
+be quite challenging and fun. I'm certain that I am not doing things "right"
+in all cases but it is working out better than I originally anticipated.
+
+In all cases an overdoses of tests are provided with more added with each
+discovery.
 
 ===Requirements
-
 * CMake
 * Boost-1.42.0 or newer
 * Spirit 2.3 or newer
 * Tested with gcc-4.4.3 on Ubuntu 10.04
 
 ===Current parsers
-
 * http11_parser, see: http://www.faqs.org/rfcs/rfc2616.html
 * uri_parser, see: http://www.faqs.org/rfcs/rfc3986.html
 * percent_encoded_char (ie, %6d translates to m)
