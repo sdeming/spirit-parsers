@@ -30,14 +30,31 @@ bool P(uri::uri_t &uri, const char *test)
     return P(uri, std::string(test));
 }
 
-BOOST_AUTO_TEST_CASE(uri_pct_encoded_host)
+BOOST_AUTO_TEST_CASE(opaque_uri)
+{
+    uri::uri_t uri;
+    BOOST_CHECK(true == P(uri, "mailto:nospam@makefile.com"));
+    BOOST_CHECK("nospam@makefile.com" == uri.path);
+}
+
+BOOST_AUTO_TEST_CASE(rel_uri_path)
+{
+    uri::uri_t uri;
+    BOOST_CHECK(true == P(uri, "some/file/in_a_directory.html"));
+    BOOST_CHECK("some/file/in_a_directory.html" == uri.path);
+
+    BOOST_CHECK(true == P(uri, "/some/file/in_a_directory.html"));
+    BOOST_CHECK("/some/file/in_a_directory.html" == uri.path);
+}
+
+BOOST_AUTO_TEST_CASE(abs_uri_pct_encoded_host)
 {
     uri::uri_t uri;
     BOOST_CHECK(true == P(uri, "http://%6d%61%6b%65%66%69%6c%65%2e%63%6f%6d"));
     BOOST_CHECK("makefile.com" == uri.host);
 }
 
-BOOST_AUTO_TEST_CASE(uri_components)
+BOOST_AUTO_TEST_CASE(abs_uri_components)
 {
     uri::uri_t uri;
     BOOST_CHECK(true == P(uri, "http://makefile.com"));

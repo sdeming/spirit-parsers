@@ -64,6 +64,7 @@ namespace uri
             sub_delims      = char_("!$&'()*+,;=");
             reserved_char   = gen_delims | sub_delims;
             unreserved_char = alnum | mark_char;
+            uri_char        = reserved_char | unreserved_char | pct_enc_char;
 
             pchar           = unreserved_char | sub_delims | char_(":@") | pct_enc_char;
 
@@ -89,8 +90,12 @@ namespace uri
             authority       = -user_info >> host >> -(':' >> port);
 
             // Path
-            path_attr       = char_('/') >> *(alnum | char_("+-./"));
+            path_attr       = *(pchar | char_("/;"));
             path            = path_attr[ref(it.path) = qi::_1];
+
+            // Opaque
+            opaque_attr     = uri_char - '/' >> (*uri_char);
+            opaque          = opaque_attr[ref(it.path) = qi::_1];
 
             // Query
             query_attr      = omit['?'] >> *(pchar | char_("/?:@"));
@@ -101,11 +106,12 @@ namespace uri
             fragment        = fragment_attr[ref(it.fragment) = qi::_1];
 
             // Request-URI
-            abs_uri         = scheme >> "//" >> authority >> -path >> -query >> -fragment;
-            abs_path        = path;
+            hier_part       = string("//") >> authority >> -path >> -query;
+            opaque_part     = opaque;
+            abs_uri         = scheme >> (hier_part | opaque_part) >> -fragment;
 
             // entry
-            start           = abs_uri | abs_path | string("*");
+            start           = abs_uri | path | string("*");
         }
 
         ipv4_address<Iterator> ipv4;
@@ -116,14 +122,15 @@ namespace uri
 
         qi::rule<Iterator, char()> gen_delims, sub_delims;
         qi::rule<Iterator, char()> mark_char, reserved_char, unreserved_char;
+        qi::rule<Iterator, char()> uri_char;
         qi::rule<Iterator, char()> pchar;
 
         qi::rule<Iterator, std::string()> ip_v_future, ip_literal;
 
-        qi::rule<Iterator> scheme, user_info, host, port, path, query, fragment, authority;
-        qi::rule<Iterator, std::string()> scheme_attr, user_info_attr, host_attr, port_attr, path_attr, query_attr, fragment_attr;
+        qi::rule<Iterator> scheme, user_info, host, port, path, opaque, query, fragment, authority;
+        qi::rule<Iterator, std::string()> scheme_attr, user_info_attr, host_attr, port_attr, path_attr, opaque_attr, query_attr, fragment_attr;
 
-        qi::rule<Iterator, std::string()> abs_uri, abs_path, request_uri;
+        qi::rule<Iterator, std::string()> hier_part, opaque_part, abs_uri, abs_path, request_uri;
 
         qi::rule<Iterator> start;
     };
