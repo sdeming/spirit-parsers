@@ -62,6 +62,7 @@ namespace uri
 
             gen_delims      = char_(":/?#[]@");
             sub_delims      = char_("!$&'()*+,;=");
+            path_char       = char_('/');
             reserved_char   = gen_delims | sub_delims;
             unreserved_char = alnum | char_("-._~");
             pchar           = unreserved_char | pct_enc_char | sub_delims | char_(":@");
@@ -92,11 +93,11 @@ namespace uri
             authority       = -user_info >> host >> -(':' >> port);
 
             // Path
-            path_abempty    = raw[*("/" >> segment)];
-            path_absolute   = raw[string("/") >> -(segment_nz >> *("/" >> segment))];
-            path_noscheme   = raw[segment_nz_nc >> *("/" >> segment)];
-            path_rootless   = raw[segment_nz >> *("/" >> segment)];
-            path_empty      = !pchar;
+            path_abempty    %= raw[*(path_char >> segment)][ref(it.path) = qi::_val];
+            path_absolute   %= raw[path_char >> -(segment_nz >> *(path_char >> segment))][ref(it.path) = qi::_val];
+            path_noscheme   %= raw[segment_nz_nc >> *(path_char >> segment)][ref(it.path) = qi::_val];
+            path_rootless   %= raw[segment_nz >> *(path_char >> segment)][ref(it.path) = qi::_val];
+            path_empty      %= !pchar[ref(it.path) = ""];
 
             // Query
             query_attr      = omit['?'] >> *(pchar | char_("/?"));
@@ -107,22 +108,37 @@ namespace uri
             fragment        = fragment_attr[ref(it.fragment) = qi::_1];
 
             // Request-URI
-            hier_part       = string("//") >> authority >> -path_abempty[ref(it.path) = qi::_1]
-                            | path_absolute[ref(it.path) = qi::_1]
-                            | path_rootless[ref(it.path) = qi::_1]
-                            | path_empty[ref(it.path) = qi::_1]
+            hier_part       = omit["//"] >> authority >> path_abempty
+                            | path_absolute
+                            | path_rootless
+                            | path_empty
                             ;
             abs_uri         = scheme >> hier_part >> -query >> -fragment;
 
-            relative_part   = string("//") >> authority >> -path_absolute[ref(it.path) = qi::_1]
-                            | path_absolute[ref(it.path) = qi::_1]
-                            | path_rootless[ref(it.path) = qi::_1]
-                            | path_empty[ref(it.path) = qi::_1]
+            relative_part   = omit["//"] >> authority >> path_abempty
+                            | path_absolute
+                            | path_noscheme
+                            | path_empty
                             ;
             rel_uri         = relative_part >> -query >> -fragment;
 
             // entry
             start           = abs_uri | rel_uri | string("*");
+
+
+            path_abempty.name("path_abempty");
+            path_absolute.name("path_absolute");
+            path_noscheme.name("path_noscheme");
+            path_rootless.name("path_rootless");
+            path_empty.name("path_empty");
+            hier_part.name("hier_part");
+
+            //qi::debug(hier_part);
+            //qi::debug(path_abempty);
+            //qi::debug(path_absolute);
+            //qi::debug(path_noscheme);
+            //qi::debug(path_rootless);
+            //qi::debug(path_empty);
         }
 
         ipv4_address<Iterator> ipv4;
@@ -133,6 +149,7 @@ namespace uri
 
         qi::rule<Iterator, char()> gen_delims, sub_delims;
         qi::rule<Iterator, char()> reserved_char, unreserved_char;
+        qi::rule<Iterator, char()> path_char;
         qi::rule<Iterator, char()> pchar;
 
         qi::rule<Iterator> segment, segment_nz, segment_nz_nc;

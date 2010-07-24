@@ -17,11 +17,13 @@ bool P(uri::uri_t &uri, const T &test)
     uri::uri_t new_uri;
     uri = new_uri;
     
-    std::cerr << "TEST: |" << test << "|" << std::endl;
     uri::uri_parser<typename T::const_iterator> grammar(uri);
     bool pass = phrase_parse(begin, end, grammar, space);
-    std::cerr << uri.to_string() << std::endl; 
-    std::cerr << "=====================================" << std::endl;
+
+    std::cerr << "\n\nTEST: |" << test << "|\n"
+              << uri.to_string() << "\n"
+              << "=====================================\n";
+
     return pass;
 }
 
