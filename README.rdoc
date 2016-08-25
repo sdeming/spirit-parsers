@@ -13,14 +13,13 @@ discovery.
 
 ===Requirements
 * CMake
-* Boost-1.42.0 or newer with Spirit 2.3
-* gcc 4.4 ?
+* Boost-1.54.0 
+* gcc 4.8.4?
 
 ===Test Platform
-* Platform: linux
-* Compiler: GNU C++ version 4.4.1
-* STL     : GNU libstdc++ version 20091005
-* Boost   : 1.42.0
+* Platform: linux (Unbuntu on Windows... FUN)
+* Compiler: GNU C++ version 4.8.4
+* Boost   : 1.54.0
 
 ===Current parsers
 * http11_parser, see: http://www.faqs.org/rfcs/rfc2616.html
