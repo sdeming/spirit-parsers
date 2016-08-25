@@ -1,15 +1,14 @@
 cmake_minimum_required (VERSION 2.6)
 project (tests)
 
-set (BOOST_LIB_PATH /opt/boost/lib)
-set (BOOST_LIBS ${BOOST_LIB_PATH}/libboost_unit_test_framework.a)
-set (BOOST_INCLUDE_PATH /opt/boost/include)
+find_package(Boost 1.54.0 REQUIRED)
+
 set (EXECUTABLE_OUTPUT_PATH ".")
 
-link_directories(${BOOST_LIB_PATH})
-link_libraries(${BOOST_LIBS})
+link_directories(${Boost_LIBRARY_DIRS})
+link_libraries(boost_unit_test_framework)
 
-include_directories(. ../include ${BOOST_INCLUDE_PATH})
+include_directories(. ../include ${Boost_INCLUDE_DIRS})
 
 # Tests
 add_executable(ipv4_address_test ipv4_address_test.cpp)
